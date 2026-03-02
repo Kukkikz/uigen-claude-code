@@ -1,13 +1,22 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import Editor from "@monaco-editor/react";
+import { useEffect, useRef, useState } from "react";
+import Editor, { loader } from "@monaco-editor/react";
 import { useFileSystem } from "@/lib/contexts/file-system-context";
-import { Code2 } from "lucide-react";
+import { Code2, AlertCircle } from "lucide-react";
 
 export function CodeEditor() {
   const { selectedFile, getFileContent, updateFile } = useFileSystem();
   const editorRef = useRef<any>(null);
+  const [editorError, setEditorError] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    loader.init().catch(() => {
+      if (!cancelled) setEditorError(true);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const handleEditorDidMount = (editor: any) => {
     editorRef.current = editor;
@@ -40,6 +49,22 @@ export function CodeEditor() {
         return 'plaintext';
     }
   };
+
+  if (editorError) {
+    return (
+      <div className="h-full flex items-center justify-center bg-gray-900">
+        <div className="text-center">
+          <AlertCircle className="h-12 w-12 text-gray-500 mx-auto mb-3" />
+          <p className="text-sm text-gray-400">
+            Editor failed to load
+          </p>
+          <p className="text-xs text-gray-600 mt-1">
+            Check your network connection and reload the page
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!selectedFile) {
     return (
